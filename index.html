@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Match Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #283149;
+            font-family: Arial, sans-serif;
+        }
+
+        #game-container {
+            display: grid;
+            grid-gap: 10px;
+            padding: 20px;
+            background-color: #404b69;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .card {
+            width: 80px;
+            height: 80px;
+            background-color: #dbedf3;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            color: #283149;
+        }
+
+        .card.flipped {
+            background-color: #f73859;
+            color: #ffffff;
+        }
+
+        .card.matched {
+            visibility: hidden;
+        }
+
+        h1 {
+            color: #f7b267;
+            text-align: center;
+        }
+
+        #timer, #level-display {
+            color: #f7b267;
+            font-size: 18px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        button {
+            background-color: #f7b267;
+            border: none;
+            color: #283149;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        button:hover {
+            background-color: #f73859;
+            color: #ffffff;
+        }
+
+        #start-screen {
+            text-align: center;
+            color: #f7b267;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <h1>Memory Match Game</h1>
+        <p>Match pairs of cards by flipping them over. Find all pairs before time runs out!</p>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <div id="game-content" style="display:none;">
+        <div id="game-container"></div>
+        <div id="level-display">Level: <span id="level">1</span></div>
+        <div id="timer">Time Left: <span id="time-left">60</span>s</div>
+        <button onclick="restartGame()">Restart Game</button>
+    </div>
+
+    <script>
+        const cardIcons = ['🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍒', '🍓', '🍍', '🥭', '🍑', '🍈'];
+        let level = 1;
+        let matchedPairs = 0;
+        let cards = [];
+        let flippedCards = [];
+        let timeLeft = 60;
+        let timer;
+
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('game-content').style.display = 'block';
+            initializeGame();
+        }
+
+        function initializeGame() {
+            const gameContainer = document.getElementById('game-container');
+            gameContainer.innerHTML = '';
+            matchedPairs = 0;
+            timeLeft = 60;
+            document.getElementById('time-left').textContent = timeLeft;
+            document.getElementById('level').textContent = level;
+            const gridSize = Math.ceil(Math.sqrt(level * 4));
+            gameContainer.style.gridTemplateColumns = `repeat(${gridSize}, 80px)`;
+
+            const levelIcons = [...cardIcons].slice(0, level + 2); 
+            cards = [...levelIcons, ...levelIcons]
+                .sort(() => Math.random() - 0.5)
+                .map(icon => createCardElement(icon));
+
+            cards.forEach(card => gameContainer.appendChild(card));
+            startTimer();
+        }
+
+        function createCardElement(icon) {
+            const card = document.createElement('div');
+            card.classList.add('card');
+            card.dataset.icon = icon;
+            card.addEventListener('click', () => flipCard(card));
+            return card;
+        }
+
+        function flipCard(card) {
+            if (flippedCards.length < 2 && !card.classList.contains('flipped')) {
+                card.classList.add('flipped');
+                card.textContent = card.dataset.icon;
+                flippedCards.push(card);
+
+                if (flippedCards.length === 2) {
+                    checkForMatch();
+                }
+            }
+        }
+
+        function checkForMatch() {
+            const [card1, card2] = flippedCards;
+
+            if (card1.dataset.icon === card2.dataset.icon) {
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                matchedPairs++;
+                flippedCards = [];
+                if (matchedPairs === level + 2) {
+                    clearInterval(timer);
+                    alert(`Level ${level} Complete! Moving to Level ${level + 1}`);
+                    level++;
+                    initializeGame();
+                }
+            } else {
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    card1.textContent = '';
+                    card2.textContent = '';
+                    flippedCards = [];
+                }, 800);
+            }
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('time-left').textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    alert("Time's up! Game over.");
+                    restartGame();
+                }
+            }, 1000);
+        }
+
+        function restartGame() {
+            level = 1;
+            clearInterval(timer);
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('game-content').style.display = 'block';
+            initializeGame();
+        }
+    </script>
+
+</body>
+</html>
